@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 
 from compute_reports import compute_reports, REPORT_HOURS
+from cassandra_client import CassandraClient
 
 
 def unpack_message(message):
@@ -30,6 +31,7 @@ if __name__ == '__main__':
 
     # init consumer
     cons = KafkaConsumer('wiki-create', bootstrap_servers='kafka-server')
+    client = CassandraClient('cassandra-server', 9042, 'project_keyspace')
 
     # receive incoming messages, gracefully quit on Ctrl+C
     try:
@@ -46,10 +48,10 @@ if __name__ == '__main__':
             try:
                 data = unpack_message(msg)
                 last_hour_data.append(data)  # for precomputed reports
-                pass  # TODO: something like client.insert(data) for ad hoc queries
+                client.insert(data)  # TODO: actually make insert in client
             except KeyError:  # incomplete entries
                 pass
 
     except KeyboardInterrupt:
         cons.close()
-        pass  # TODO: something like client.shutdown()
+        client.shutdown()

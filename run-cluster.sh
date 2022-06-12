@@ -20,7 +20,7 @@ done
 echo 'Node 1 created.'
 
 docker exec cassandra-server mkdir /opt/app
-docker cp ddl.cql cassandra-server:/opt/app
+docker cp cassandra-client/create-tables.cql cassandra-server:/opt/app
 docker exec cassandra-server cqlsh --file /opt/app/ddl.cql
 
 echo 'DONE.'
