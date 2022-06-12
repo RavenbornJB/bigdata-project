@@ -12,11 +12,14 @@ def unpack_message(message):
 
     page_domain = payload['meta']['domain']
     page_title = payload['page_title']
+    page_id = payload['page_id']
     user_id = payload['performer']['user_id']
     user_name = payload['performer']['user_text']
     is_bot = payload['performer']['user_is_bot']
+    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+    # set time to current local time (this time is the same as page creation time as we get it the moment it is posted)
 
-    return page_domain, page_title, user_id, user_name, is_bot
+    return page_id, created_at, page_domain, page_title, user_id, user_name, is_bot
 
 
 if __name__ == '__main__':
@@ -47,8 +50,8 @@ if __name__ == '__main__':
 
             try:
                 data = unpack_message(msg)
-                last_hour_data.append(data)  # for precomputed reports
-                client.insert(data)  # TODO: actually make insert in client
+                last_hour_data.append(data[2:])  # for precomputed reports
+                client.update_tables(data[:7]) # update tables with new data
             except KeyError:  # incomplete entries
                 pass
 
