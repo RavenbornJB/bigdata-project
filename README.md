@@ -2,8 +2,8 @@
 
 ## Team
 
-- [Yarema Mishchenko](https://github.com/RavenbornJB)
 - [Dmytro Lutchyn](https://github.com/dlutchyn)
+- [Yarema Mishchenko](https://github.com/RavenbornJB)
 
 ## System design
 
@@ -13,12 +13,10 @@ These 4 services are, as named in the project:
 
 - `producer/producer.py` - responsible for fetching the Wikipedia data from the stream and passing it forward
 - `consumer/consumer.py` - responsible for processing the data, filling Cassandra tables and maintaining a Pandas dataframe
-- `precomputed-reports/reports_server.py` - responsible for maintaining a `.json` file with precomputed outputs and serving it upon request
+- `precomputed-reports/reports_server.py` - responsible for maintaining a JSON file with precomputed outputs and serving it upon request
 - `ad-hoc-queries/ad_hoc_server.py` - responsible for maintaining a Cassandra client connection and serving query results upon request.
 
 In the diagram below, you can see how all those components create a coherent system.
-
-<br/><br/><br/><br/><br/><br/><br/><br/>
 
 ### Diagram
 
@@ -26,7 +24,12 @@ In the diagram below, you can see how all those components create a coherent sys
 
 ### Kafka - producer & consumer
 
-TODO: (yarema) write about how these work in our system
+As events come into the system, they pass through a Kafka MQ. This is done for scalability as well as for separating services with different purposes. Preprocessing events in the producer allows the consumer to focus on the important logic, which is writing records to a Cassandra DB and precomputing reports.
+
+For reports from Category A, we are using Pandas instead of Apache Spark. The reason is twofold:
+
+- The amount of data is small enough to be suitable for a non-distributed system. We are keeping track of all records from the last 8 hours, which (at the rate of ~2/sec) there are about 57k. Given that one entry usually weighs no more than 500 bytes (pessimistic estimate, for long titles), we can easily fit our records in less than 30 MB.
+- We are more comfortable with Pandas :D While often overlooked, the amount of developer's experience in a framework is often extremely important for a streamlined development process.
 
 ### Cassandra - DB for storage
 
@@ -44,7 +47,7 @@ You can check out `cassandra-client/create-tables.cql` for keyspace initializati
 
 ### Precomputed reports server - Category A
 
-TODO: (yarema) write about why pandas and how this server gets data
+Every hour, the consumer recomputes records for the last 6 full hours, excluding the last hour. These requests, in a JSON form, are then sent via a POST request to our precomputed server. Here, the server stores `queries.json` to give out on a GET request, which you can do as a client via port forwarding.
 
 ### Ad hoc server - Category B
 
@@ -60,7 +63,7 @@ All of our results are stored in the `project-results` directory. These results 
 
 ### Category A
 
-For category A, the `.json` file with query results is saved to `project-results/queries.json`.
+For category A, the JSON file with query results is saved to `project-results/queries.json`.
 
 The file is extremely large because of the 3rd query: the top author created over 20000 pages.
 
