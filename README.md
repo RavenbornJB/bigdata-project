@@ -7,6 +7,19 @@
 
 ## System design
 
+Our system consists of 4 independent services, as well as Kafka, Zookeeper, and Cassandra instances.
+
+These 4 services are, as named in the project:
+
+- `producer/producer.py` - responsible for fetching the Wikipedia data from the stream and passing it forward
+- `consumer/consumer.py` - responsible for processing the data, filling Cassandra tables and maintaining a Pandas dataframe
+- `precomputed-reports/reports_server.py` - responsible for maintaining a `.json` file with precomputed outputs and serving it upon request
+- `ad-hoc-queries/ad_hoc_server.py` - responsible for maintaining a Cassandra client connection and serving query results upon request.
+
+In the diagram below, you can see how all those components create a coherent system.
+
+<br/><br/><br/><br/><br/><br/><br/><br/>
+
 ### Diagram
 
 ![diagram](project-results/screenshots/diagram.png)
@@ -17,7 +30,17 @@ TODO: (yarema) write about how these work in our system
 
 ### Cassandra - DB for storage
 
-TODO: (dmytro) write about tables in Cassandra
+Our Cassandra storage has 5 different tables for each ad-hoc queries. 
+
+- domains -> `(domain text), PIRMARY KEY (domain)`
+- page_user -> `(domain text, page_name text, user_id int, page_id int,) PRIMARY KEY (user_id, domain, page_id)`
+- page_domains -> `(domain text, page_id int) PRIMARY KEY (domain, page_id)`
+- pages_info -> `(page_id int, page_name text, domain text, created_at timestamp) PRIMARY KEY (page_id, domain)`
+- page_users_info -> `(user_id int, username text, page_id int, created_at timestamp) PRIMARY KEY (user_id, created_at, page_id)`
+
+This way the use of tables becomes easier and more efficient when doing SELECT queries. 
+
+You can check out `cassandra-client/create-tables.cql` for keyspace initialization.
 
 ### Precomputed reports server - Category A
 
@@ -25,7 +48,11 @@ TODO: (yarema) write about why pandas and how this server gets data
 
 ### Ad hoc server - Category B
 
-TODO: (dmytro) write about how this server gets data
+Consumer creates CassandraClient that updates all existing tables as soon as the new message comes to Kafka. CassandraClient has separate methods for inserting data to different tables (`insert_to_page_user`, etc.), and methods for getting answers to all queries (`select_from_pages_info`, etc.)
+
+To get SELECT results we have separate script that gets requests from the server and executes corresponding SELECT queries.
+
+`client_demo.py` sends these requests via POST request to the server.
 
 ## Results
 
