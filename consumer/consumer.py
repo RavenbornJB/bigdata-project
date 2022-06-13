@@ -16,7 +16,7 @@ def unpack_message(message):
     user_id = payload['performer']['user_id']
     user_name = payload['performer']['user_text']
     is_bot = payload['performer']['user_is_bot']
-    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+    created_at = datetime.now()
     # set time to current local time (this time is the same as page creation time as we get it the moment it is posted)
 
     return page_id, created_at, page_domain, page_title, user_id, user_name, is_bot
@@ -35,13 +35,14 @@ if __name__ == '__main__':
     # init consumer
     cons = KafkaConsumer('wiki-create', bootstrap_servers='kafka-server')
     client = CassandraClient('cassandra-server', 9042, 'project_keyspace')
+    client.connect()
 
     # receive incoming messages, gracefully quit on Ctrl+C
     try:
         for msg in cons:
             # recompute reports when hour changes
-            if datetime.now().second != cur_hour:
-                cur_hour = datetime.now().second
+            if datetime.now().hour != cur_hour:
+                cur_hour = datetime.now().hour
                 stored_data.pop(0)
                 stored_data.append(pd.DataFrame(last_hour_data, columns=columns))
                 last_hour_data = []
@@ -51,8 +52,8 @@ if __name__ == '__main__':
             try:
                 data = unpack_message(msg)
                 last_hour_data.append(data[2:])  # for precomputed reports
-                client.update_tables(data[:7]) # update tables with new data
-            except KeyError:  # incomplete entries
+                client.update_tables(data[:6])  # update tables with new data
+            except (ValueError, KeyError):  # incomplete entries
                 pass
 
     except KeyboardInterrupt:

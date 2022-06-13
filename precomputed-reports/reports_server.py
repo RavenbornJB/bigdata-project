@@ -13,7 +13,7 @@ def serve():
             return Response(status=200)
     else:
         with open('/opt/app/queries.json', 'r') as f:
-            return Response(f.read(), mimetype='application/json')
+            return Response(f.read() + '\n', mimetype='application/json')
 
 
 if __name__ == '__main__':

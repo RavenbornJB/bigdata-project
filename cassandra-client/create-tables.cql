@@ -4,7 +4,7 @@ USE project_keyspace;
 
 DROP TABLE IF EXISTS domains;
 DROP TABLE IF EXISTS page_user;
-DROP TABLE IF EXISTS 4;
+DROP TABLE IF EXISTS page_domains;
 DROP TABLE IF EXISTS pages_info;
 DROP TABLE IF EXISTS page_users_info;
 
@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS page_user
     domain text,
     page_name text,
     user_id int,
-    PRIMARY KEY (domain, user_id)
+    page_id int,
+    PRIMARY KEY (user_id, domain, page_id)
 );
 
 
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS page_domains
 (
     domain text,
     page_id int,
-    PRIMARY KEY (page_id, domain)
+    PRIMARY KEY (domain, page_id)
 );
 
 
@@ -42,7 +43,7 @@ CREATE TABLE IF NOT EXISTS pages_info
     page_id int,
     page_name text,
     domain text,
-    created_at date,
+    created_at timestamp,
     PRIMARY KEY (page_id, domain)
 );
 
@@ -53,6 +54,6 @@ CREATE TABLE IF NOT EXISTS page_users_info
     user_id int,
     username text,
     page_id int,
-    created_at date,
-    PRIMARY KEY (domain)
+    created_at timestamp,
+    PRIMARY KEY (user_id, created_at, page_id)
 );
