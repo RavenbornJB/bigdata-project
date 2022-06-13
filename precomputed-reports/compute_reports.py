@@ -16,7 +16,6 @@ def compute_reports(data, start_hour):
         'second_query': second_query(data, start_hour),
         'third_query': third_query(data, start_hour)
     })
-    print('request done')
 
 
 def first_query(data, start_hour):

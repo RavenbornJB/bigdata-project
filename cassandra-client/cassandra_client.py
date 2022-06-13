@@ -1,4 +1,6 @@
 from cassandra.cluster import Cluster
+from datetime import datetime
+
 
 
 class CassandraClient:
@@ -38,9 +40,6 @@ class CassandraClient:
         self.pages_info_select = self.session.prepare(
             "SELECT page_name, domain, created_at FROM pages_info "
             "WHERE page_id = ?;")
-        self.page_users_info_select = self.session.prepare(
-            "SELECT user_id, username, COUNT(page_id) FROM page_users_info "
-            "WHERE (created_at > ?) AND (created_at < ?) GROUP BY user_id ALLOW FILTERING;")
 
     def insert_to_domains(self, domain):
         self.session.execute(self.domains_insert, (domain,))
@@ -61,7 +60,7 @@ class CassandraClient:
         return list(self.session.execute(self.domains_select))
     
     def select_from_page_user(self, data):
-        user_id = data['user_id']
+        user_id = int(data['user_id'])
         return list(self.session.execute(self.page_user_select, (user_id,)))
     
     def select_from_page_domains(self, data):
@@ -69,13 +68,14 @@ class CassandraClient:
         return list(self.session.execute(self.page_domains_select, (domain,)))
     
     def select_from_pages_info(self, data):
-        page_id = data['page_id']
+        page_id = int(data['page_id'])
         return list(self.session.execute(self.pages_info_select, (page_id,)))
     
     def select_from_page_users_info(self, data):
         start_time = data['start_time']
         end_time = data['end_time']
-        return list(self.session.execute(self.page_users_info_select, (start_time, end_time)))
+        return list(self.session.execute(f"SELECT user_id, username, COUNT(page_id) FROM page_users_info "
+            f"WHERE (created_at > '{start_time}') AND (created_at < '{end_time}') GROUP BY user_id;"))
     
     def update_tables(self, data):
         page_id, created_at, domain, page_name, user_id, username = data
